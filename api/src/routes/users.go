@@ -13,5 +13,6 @@ func setupUserRoutes(baseRouter *gin.RouterGroup) {
 	users.PUT("", middleware.AuthenticationMiddleware, controllers.UpdateUser)
 	users.GET("/me", middleware.AuthenticationMiddleware, controllers.GetCurrentUser)
 	users.DELETE("/me", middleware.AuthenticationMiddleware, controllers.DeleteUser)
+	users.GET("/:id/likes", middleware.AuthenticationMiddleware, controllers.GetLikedPostsByUserID)
 	users.GET("/:id", middleware.AuthenticationMiddleware, controllers.GetUserByID)
 }

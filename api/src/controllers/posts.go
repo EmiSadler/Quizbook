@@ -24,10 +24,17 @@ type JSONPost struct {
 	Answer     string            `json:"answer"`
 	UserID     uint              `json:"user_id"`
 	Username   string            `json:"username"`
+	User       JSONPostUser      `json:"user"`
 	Comments   []PostCommentJSON `json:"comments"`
 	NumOfLikes int               `json:"numOfLikes"`
 	Liked      bool              `json:"liked"`
 	CreatedAt  string            `json:"created_at"`
+}
+
+type JSONPostUser struct {
+	ID                uint   `json:"_id"`
+	Username          string `json:"username"`
+	ProfilePictureURL string `json:"profilePicture"`
 }
 
 func GetAllPosts(ctx *gin.Context) {
@@ -102,11 +109,16 @@ func GetAllPosts(ctx *gin.Context) {
 
 		// ============================= Append to JSON posts for response ==========================
 		jsonPosts = append(jsonPosts, JSONPost{
-			ID:         post.ID,
-			Question:   post.Question,
-			Answer:     post.Answer,
-			UserID:     post.UserID,
-			Username:   authorUsername,
+			ID:       post.ID,
+			Question: post.Question,
+			Answer:   post.Answer,
+			UserID:   post.UserID,
+			Username: authorUsername,
+			User: JSONPostUser{
+				ID:                author.ID,
+				Username:          author.Username,
+				ProfilePictureURL: author.ProfilePictureURL,
+			},
 			Comments:   jsonComments,
 			NumOfLikes: numOfLikes,
 			Liked:      liked,
@@ -247,11 +259,16 @@ func GetPostsByUserID(ctx *gin.Context) {
 
 		// ========================= Append to JSON posts for response ==============================
 		jsonPosts = append(jsonPosts, JSONPost{
-			ID:         post.ID,
-			Question:   post.Question,
-			Answer:     post.Answer,
-			UserID:     post.UserID,
-			Username:   authorUsername,
+			ID:       post.ID,
+			Question: post.Question,
+			Answer:   post.Answer,
+			UserID:   post.UserID,
+			Username: authorUsername,
+			User: JSONPostUser{
+				ID:                author.ID,
+				Username:          author.Username,
+				ProfilePictureURL: author.ProfilePictureURL,
+			},
 			Comments:   jsonComments,
 			NumOfLikes: numOfLikes,
 			Liked:      liked,
@@ -260,6 +277,46 @@ func GetPostsByUserID(ctx *gin.Context) {
 	}
 
 	// ========================== Generate token & send response ================================
+	ctx.JSON(http.StatusOK, gin.H{"posts": jsonPosts, "token": token})
+}
+
+func GetLikedPostsByUserID(ctx *gin.Context) {
+	userId := ctx.Param("id")
+	userIdUint, err := strconv.ParseUint(userId, 10, 32)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
+		return
+	}
+
+	posts, err := models.FetchLikedPostsByUserID(uint(userIdUint))
+	if err != nil {
+		SendInternalError(ctx, err)
+		return
+	}
+
+	val, _ := ctx.Get("userID")
+	userID := val.(string)
+	token, _ := auth.GenerateToken(userID)
+
+	jsonPosts := make([]JSONPost, len(*posts))
+	for _, post := range *posts {
+
+		// ========================= Append to JSON posts for response ==============================
+		jsonPosts = append(jsonPosts, JSONPost{
+			ID:       post.ID,
+			Question: post.Question,
+			Answer:   post.Answer,
+			UserID:   post.UserID,
+			Username: post.User.Username,
+			User: JSONPostUser{
+				ID:                post.User.ID,
+				Username:          post.User.Username,
+				ProfilePictureURL: post.User.ProfilePictureURL,
+			},
+			CreatedAt: post.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{"posts": jsonPosts, "token": token})
 }
 
@@ -333,11 +390,16 @@ func GetCurrentUserPosts(ctx *gin.Context) {
 
 		// ============================= Append to JSON posts for response ==========================
 		jsonPosts = append(jsonPosts, JSONPost{
-			ID:         post.ID,
-			Question:   post.Question,
-			Answer:     post.Answer,
-			UserID:     post.UserID,
-			Username:   authorUsername,
+			ID:       post.ID,
+			Question: post.Question,
+			Answer:   post.Answer,
+			UserID:   post.UserID,
+			Username: authorUsername,
+			User: JSONPostUser{
+				ID:                author.ID,
+				Username:          author.Username,
+				ProfilePictureURL: author.ProfilePictureURL,
+			},
 			Comments:   jsonComments,
 			NumOfLikes: numOfLikes,
 			Liked:      liked,
@@ -428,11 +490,16 @@ func GetPostByID(ctx *gin.Context) {
 	}
 
 	jsonPost := JSONPost{
-		ID:         post.ID,
-		Question:   post.Question,
-		Answer:     post.Answer,
-		UserID:     post.UserID,
-		Username:   authorUsername,
+		ID:       post.ID,
+		Question: post.Question,
+		Answer:   post.Answer,
+		UserID:   post.UserID,
+		Username: authorUsername,
+		User: JSONPostUser{
+			ID:                author.ID,
+			Username:          author.Username,
+			ProfilePictureURL: author.ProfilePictureURL,
+		},
 		Comments:   jsonComments,
 		NumOfLikes: numOfLikes,
 		Liked:      liked,

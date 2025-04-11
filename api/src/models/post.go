@@ -23,6 +23,15 @@ func (post *Post) Save() (*Post, error) {
 	return post, nil
 }
 
+func FetchLikedPostsByUserID(userID uint) (*[]Post, error) {
+	var posts []Post
+	err := Database.Model(&Post{}).Joins("JOIN likes ON likes.post_id = posts.id").Where("likes.user_id = ?", userID).Joins("User").Find(&posts).Error
+	if err != nil {
+		return &[]Post{}, err
+	}
+	return &posts, nil
+}
+
 func FetchAllPosts() (*[]Post, error) {
 	var posts []Post
 	err := Database.Find(&posts).Error

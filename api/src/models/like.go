@@ -36,11 +36,11 @@ func FindLikeByUserIDAndPostID(userID uint, postID uint) (*Like, error) {
 	var like Like
 	err := Database.Where("user_id = ? AND post_id = ?", userID, postID).First(&like).Error
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 	return &like, nil
 }
 
 func (like *Like) Delete() error {
 	return Database.Delete(like).Error
-} 
+}
